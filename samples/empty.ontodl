@@ -1,0 +1,9 @@
+Ontologia "Empty"
+
+concepts {}
+
+individuos {} 
+
+relacoes {}
+
+triples {}.

@@ -1,0 +1,15 @@
+Ontologia "Basic"
+
+concepts {
+  c,
+  d[f: boolean]
+}
+
+individuos { a, b, c }
+
+relacoes { x, y }
+
+triples {
+  a = isa => c;
+  b = y => d[f=true];
+}.

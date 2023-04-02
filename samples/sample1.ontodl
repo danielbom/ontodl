@@ -1,0 +1,25 @@
+Ontologia map
+
+conceitos{
+  city [name:string],
+  traveler [name:string]
+}
+
+individuos{
+  pl,ine,pt,lx
+}
+
+relacoes{
+  alreadyVisited, lives
+}
+
+triplos{
+  pl = iof => traveler [name="Paulo"];
+  ine = iof => traveler [name="Ines"];
+  pt = iof => city [name="Porto"];
+  lx = iof => city [name="Lisboa"];
+  pl = alreadyVisited => pt;
+  ine = alreadyVisited => lx;
+  pl = lives => lx;
+  ine = lives => pt;
+}.
