@@ -3,13 +3,58 @@
 
 This is the specification for the ONTODL language. ONTODL is a language for describing ontologies.
 
+You can try an online version of ONTODL to DOT [here](https://webontodl.epl.di.uminho.pt/). 
+
+You can find the source code in [Github](https://github.com/danielbom/ontodl).
+
+# Get started
+
+To use this script, you need have ply installed.
+
+```
+# create a virtual environment (optional)
+python -m venv venv 
+source venv/bin/activate    # linux
+./venv/Scripts/activate.ps1 # windows powershell
+
+# install ply
+pip install ply
+```
+
+Show the help:
+
+```bash
+python3 ontodl.py --help
+python3 ontodl.py -h
+```
+
+Use some samples to test:
+
+```bash
+# default format is dot
+python3 ontodl.py samples/ontodl_sample1.ontodl --format dot 
+python3 ontodl.py samples/ontodl_sample2.ontodl --format log
+python3 ontodl.py samples/ontodl_sample1.ontodl --format json
+python3 ontodl.py samples/ontodl_sample2.ontodl --format json_dot
+```
+
+Looks for the tokenization of the input:
+
+```bash
+python3 ontodl.py samples/ontodl_sample1.ontodl --tokenize
+python3 ontodl.py samples/ontodl_sample2.ontodl --tokenize
+```
+
 # The ONTODL Syntax
 
 The syntax of ONTODL is:
 
 ```
-root            : ontology concepts individuals relations triples '.'
+root            : ontology concepts individuals relations triples end
+end             : '.'
+
 ontology        : ONTOLOGY id
+
 concepts        : CONCEPTS '{' concept_list '}'
 concept_list    : concept_list ',' concept
                 | concept
@@ -20,16 +65,19 @@ attribute_list  : attribute_list ',' attribute
                 | attribute
                 | <empty>
 attribute       : id ':' type
+
 individuals     : INDIVIDUALS '{' individual_list '}'
 individual_list : individual_list ',' individual
                 | individual
                 | <empty>
 individual      : id
+
 relations       : RELATIONS '{' relation_list '}'
 relation_list   : relation_list ',' relation
                 | relation
                 | <empty>
 relation        : id
+
 triples         : TRIPLES '{' triple_list '}'
 triple_list     : triple_list triple
                 | triple
@@ -41,6 +89,7 @@ properties_list : properties_list ',' property
                 | property
                 | <empty>
 property        : id '=' value
+
 value           : number
                 | boolean
                 | string
@@ -148,8 +197,13 @@ def create_lexer():
 
 
 def p_root(p):
-    '''root : ontology concepts individuals relations triples '.' '''
+    '''root : ontology concepts individuals relations triples end '''
     p.parser.accept('root', p)
+
+
+def p_end(p):
+    '''end : '.' '''
+    p.parser.accept('end', p)
 
 # Ontology
 
@@ -393,6 +447,8 @@ def create_parser(out='log'):
                 'relations': p[4],
                 'triples': p[5]
             }
+        elif name == 'end':
+            pass
         # Ontology
         elif name == 'ontology':
             p[0] = p[2]
@@ -411,8 +467,6 @@ def create_parser(out='log'):
                 p[0] = [p[1], dict(p[3])]
             elif len(p) == 2:
                 p[0] = [p[1], {}]
-            else:
-                p[0] = []
         elif name == 'attribute_list':
             if len(p) == 4:
                 p[0] = p[1] + [p[3]]
@@ -495,6 +549,156 @@ def create_parser(out='log'):
         else:
             print(f'Unknown name: {name}')
 
+    def accept_dot(name, p):
+        if name == 'root':
+            pass
+        elif name == 'end':
+            p.parser.result['output'].append('}\n')
+        # Ontology
+        elif name == 'ontology':
+            p.parser.result['output'].append(f'digraph {p[2]} {{')
+        # Concepts
+        elif name == 'concepts':
+            pass
+        elif name == 'concept_list':
+            pass
+        elif name == 'concept':
+            concept = p[1]
+            if concept in p.parser.result['entries']:
+                raise Exception(
+                    f'Entry with name "{concept}" already exists as {p.parser.result["entries"][concept]["type"]}')
+            if len(p) == 5:
+                attributes = dict(p[3])
+            elif len(p) == 2:
+                attributes = {}
+            p.parser.result['entries'][concept] = {
+                'type': 'concept',
+                'attributes': attributes
+            }
+            p.parser.result['output'].append(
+                f'  "{concept}" [label="{concept}", shape=ellipse, style=filled, color=turquoise4];')
+            for attribute, value in attributes.items():
+                p.parser.result['output'].append(
+                    f'  "{attribute}" [shape=rectangle, color=turquoise4];')
+                p.parser.result['output'].append(
+                    f'  "{concept}" -> "{attribute}" [label="Properties", style=dotted, color=red];')
+        elif name == 'attribute_list':
+            if len(p) == 4:
+                p[0] = p[1] + [p[3]]
+            elif len(p) == 2:
+                p[0] = [p[1]]
+            else:
+                p[0] = []
+        elif name == 'attribute':
+            p[0] = [p[1], p[3]]
+        # Individuals
+        elif name == 'individuals':
+            pass
+        elif name == 'individual_list':
+            pass
+        elif name == 'individual':
+            individual = p[1]
+            if individual in p.parser.result['entries']:
+                raise Exception(
+                    f'Entry with name "{individual}" already exists as {p.parser.result["entries"][individual]["type"]}.')
+            p.parser.result['entries'][individual] = {'type': 'individual'}
+            p.parser.result['output'].append(
+                f'  "{individual}" [shape=rectangle, style=filled, color=goldenrod];')
+        # Relations
+        elif name == 'relations':
+            pass
+        elif name == 'relation_list':
+            pass
+        elif name == 'relation':
+            relation = p[1]
+            if relation in p.parser.result['entries']:
+                raise Exception(
+                    f'Entry with name "{relation}" already exists as {p.parser.result["entries"][relation]["type"]}.')
+            p.parser.result['entries'][relation] = {'type': 'relation'}
+        # Triples
+        elif name == 'triples':
+            pass
+        elif name == 'triple_list':
+            pass
+        elif name == 'triple':
+            individual = p[1]
+            relation = p[3]
+            concept = p[5]['concept']
+            properties = p[5]['properties']
+
+            if individual not in p.parser.result['entries']:
+                raise Exception(f'Individual "{individual}" does not exist.')
+            if relation not in p.parser.result['entries']:
+                raise Exception(f'Relation "{relation}" does not exist.')
+            if concept not in p.parser.result['entries']:
+                raise Exception(f'Concept "{concept}" does not exist.')
+
+            if p.parser.result['entries'][individual]['type'] != 'individual':
+                raise Exception(f'Entry "{individual}" is not an individual.')
+            if p.parser.result['entries'][relation]['type'] != 'relation':
+                raise Exception(f'Entry "{relation}" is not a relation.')
+            if p.parser.result['entries'][concept]['type'] not in ['concept', 'individual']:
+                raise Exception(
+                    f'Entry "{concept}" is not a concept or an individual.')
+
+            entry_concept = p.parser.result['entries'][concept]
+            if entry_concept['type'] == 'concept':
+                for key, value in properties.items():
+                    if key not in entry_concept['attributes']:
+                        raise Exception(
+                            f'Concept "{concept}" does not have attribute "{key}".')
+                    if entry_concept['attributes'][key] != value[1]:
+                        raise Exception(
+                            f'Attribute "{key}" of concept "{concept}" is of type "{entry_concept["attributes"][key]}", not "{value[1]}".')
+                for key, value in entry_concept['attributes'].items():
+                    if key not in properties:
+                        raise Exception(
+                            f'Attribute "{key}" of concept "{concept}" is not set.')
+
+            p.parser.result['output'].append(
+                f'  "{individual}" -> "{concept}" [label="{relation}", style=solid, color=black];')
+
+            for key, value in properties.items():
+                node = f'{key}={value[0]}'.replace('"', "'")
+                p.parser.result['output'].append(
+                    f'  "{node}" [shape=rectangle, color=goldenrod];')
+                p.parser.result['output'].append(
+                    f'  "{individual}" -> "{node}" [label="properties", style=dotted, color=red];')
+        elif name == 'entity':
+            if len(p) == 5:
+                p[0] = {"concept": p[1], "properties": dict(p[3])}
+            elif len(p) == 2:
+                p[0] = {"concept": p[1], "properties": {}}
+        elif name == 'properties_list':
+            if len(p) == 4:
+                p[0] = p[1] + [p[3]]
+            elif len(p) == 2:
+                p[0] = [p[1]]
+            else:
+                p[0] = []
+        elif name == 'property':
+            p[0] = [p[1], p[3]]
+        elif name == 'value':
+            p[0] = p[1]
+        # Atoms
+        elif name == 'number':
+            p[0] = [p[1], name]
+        elif name == 'boolean':
+            p[0] = [p[1], name]
+        elif name == 'string':
+            p[0] = [p[1], name]
+        elif name == 'date':
+            p[0] = [p[1], name]
+        elif name == 'type':
+            p[0] = p[1]
+        elif name == 'id':
+            p[0] = p[1].strip('"')
+        else:
+            print(f'Unknown name: {name}')
+
+    def complete_dot():
+        return '\n'.join(parser.result['output'])
+
     def complete_json():
         import json
         return json.dumps(parser.result, indent=2)
@@ -560,9 +764,19 @@ def create_parser(out='log'):
     elif out == 'log':
         parser.accept = accept_log
         parser.complete = complete_log
-    elif out == 'dot':
+    elif out == 'json_dot':
         parser.accept = accept_json
         parser.complete = complete_json_dot
+    elif out == 'dot':
+        parser.accept = accept_dot
+        parser.complete = complete_dot
+        parser.result = {
+            'entries': {
+                'iof': {'type': 'relation'},
+                'isa': {'type': 'relation'},
+            },
+            'output': []
+        }
     else:
         raise Exception(f'Unknown output type: {out} ["json", "log"]')
 
@@ -576,7 +790,7 @@ def parse_args():
     argparser.add_argument('--tokenize', action='store_true',
                            help='Tokenize only')
     argparser.add_argument('-f', '--format', type=str, default='dot',
-                           choices=['dot', 'log', 'json'],
+                           choices=['dot', 'log', 'json', 'json_dot'],
                            help='Output format')
     argparser.add_argument('-o', '--output', type=argparse.FileType('w'),
                            default=sys.stdout,
