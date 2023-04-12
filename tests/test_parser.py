@@ -35,5 +35,4 @@ def make_parser():
 def test_parser_must_handle_ontology(text, result):
     parser = make_parser()
     parser.parse(text)
-    data = parser.complete()
-    assert data == result
+    assert parser.result == result

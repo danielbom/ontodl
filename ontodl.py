@@ -323,24 +323,27 @@ def create_parser(out='log'):
         print(name, p[0])
 
     def complete_log():
-        pass
+        return ""
 
     def validate_json(json):
-        if 'ontology' not in json:
-            raise Exception("Missing ontology")
-        if 'concepts' not in json:
-            raise Exception("Missing concepts")
-        if 'individuals' not in json:
-            raise Exception("Missing individuals")
-        if 'relations' not in json:
-            raise Exception("Missing relations")
-        if 'triples' not in json:
-            raise Exception("Missing triples")
-
         builtin_relations = ['isa', 'iof']
         for relation in json['relations']:
             if relation in builtin_relations:
                 raise Exception(f"Relation '{relation}' is a builtin relation")
+        # Individual, relation and concept must have disjoint keys
+        parts = ['individuals', 'relations', 'concepts']
+        keys_count = 0
+        all_keys = set()
+        for part in parts:
+            if isinstance(json[part], dict):
+                all_keys |= json[part].keys()
+                keys_count += len(json[part].keys())
+            else:
+                all_keys |= set(json[part])
+                keys_count += len(json[part])
+        if len(all_keys) != keys_count:
+            raise Exception(
+                f"Individual, relation and concept have overlapping keys")
 
         all_relations = builtin_relations + json['relations']
 
@@ -357,16 +360,24 @@ def create_parser(out='log'):
             concept_defined = False
             if triple['concept'] in json['concepts']:
                 concept_defined = True
-                concept = json['concepts'][triple['concept']]
-                # Properties must be defined
-                for prop, typ in triple['properties'].items():
+                concept_name = triple['concept']
+                concept = json['concepts'][concept_name]
+                properties = triple['properties']
+                # Properties must be defined in concept
+                for prop, typ in properties.items():
                     typ = typ[1]
                     if prop not in concept:
                         raise Exception(
-                            f"Property '{prop}' is not defined in concept '{triple['concept']}'")
+                            f"Property '{concept_name}.{prop}' is not defined in concept")
                     if typ != concept[prop]:
                         raise Exception(
-                            f"Property '{prop}' is of type '{concept[prop]}' in concept '{triple['concept']}', but is of type '{typ}' in triple")
+                            f"Property '{concept_name}.{prop}' is of type '{concept[prop]}', but got type '{typ}' in triple")
+                # Properties must be defined in triple
+                for prop, typ in concept.items():
+                    if prop not in properties:
+                        raise Exception(
+                            f"Property '{concept_name}.{prop}' is not defined in triple")
+
             if triple['concept'] in json['individuals']:
                 concept_defined = True
             if not concept_defined:
@@ -485,9 +496,10 @@ def create_parser(out='log'):
             print(f'Unknown name: {name}')
 
     def complete_json():
-        return parser.result
+        import json
+        return json.dumps(parser.result, indent=2)
 
-    def complete_dot():
+    def complete_json_dot():
         json = parser.result
         validate_json(json)
 
@@ -550,7 +562,7 @@ def create_parser(out='log'):
         parser.complete = complete_log
     elif out == 'dot':
         parser.accept = accept_json
-        parser.complete = complete_dot
+        parser.complete = complete_json_dot
     else:
         raise Exception(f'Unknown output type: {out} ["json", "log"]')
 
@@ -582,11 +594,7 @@ def execute(file, tokenize=False, format='dot', output=sys.stdout):
     lexer = create_lexer()
     parser = create_parser(format)
     parser.parse(file.read())
-    if format == 'json':
-        import json
-        output.write(json.dumps(parser.result, indent=2))
-    else:
-        output.write(str(parser.complete()))
+    output.write(parser.complete())
 
 
 if __name__ == '__main__':
