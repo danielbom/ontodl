@@ -31,6 +31,13 @@ def make_parser():
         'relations': ['c'],
         'triples': [{'concept': 'a', 'individual': 'b', 'properties': {"f": ['2020-10-10', 'date']}, 'relation': 'c'}],
     }],
+    ['''Ontologia T conceitos { a [f: date, g: boolean] } individuos { b } relacoes { c } triplos { b = c => a[f=2020-10-10, g=true]; }.''', {
+        'ontology': 'T',
+        'concepts': {'a': {'f': 'date', 'g': 'boolean'}},
+        'individuals': ["b"],
+        'relations': ['c'],
+        'triples': [{'concept': 'a', 'individual': 'b', 'properties': {"f": ['2020-10-10', 'date'], 'g': ['true', 'boolean']}, 'relation': 'c'}],
+    }],
 ])
 def test_parser_must_handle_ontology(text, result):
     parser = make_parser()
