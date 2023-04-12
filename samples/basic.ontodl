@@ -5,7 +5,7 @@ concepts {
   d[f: boolean]
 }
 
-individuos { a, b, c }
+individuos { a, b }
 
 relacoes { x, y }
 
