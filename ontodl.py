@@ -34,6 +34,7 @@ Use some samples to test:
 # default format is dot
 python3 ontodl.py samples/ontodl_sample1.ontodl --format dot 
 python3 ontodl.py samples/ontodl_sample2.ontodl --format dot:legacy
+python3 ontodl.py samples/ontodl_sample2.ontodl --format prolog
 python3 ontodl.py samples/ontodl_sample2.ontodl --format log
 python3 ontodl.py samples/ontodl_sample1.ontodl --format json
 ```
@@ -703,6 +704,74 @@ def create_parser(out='log'):
         import json
         return json.dumps(parser.result, indent=2)
 
+    def complete_prolog():
+        json = parser.result
+        validate_json(json)
+
+        output = ''
+
+        output += 'not(X) :- X, !, no.\n'
+        output += 'not(_).\n'
+
+        output += '\n'
+        for concept in json['concepts']:
+            output += f'concept({concept}).\n'
+
+        output += '\n'
+        for concept, attributes in json['concepts'].items():
+            for attribute, typ in attributes.items():
+                output += f'attribute({concept}, [{attribute}:{typ}]).\n'
+
+        output += '\n'
+        relations = json['relations'] + ['iof', 'isa']
+        for relation in relations:
+            output += f'relation({relation}).\n'
+
+        output += '\n'
+        for individual in json['individuals']:
+            output += f'individual({individual}).\n'
+
+        last = None
+        for triple in sorted(json['triples'], key=lambda x: x['relation']):
+            if last != triple['relation']:
+                output += f'\n'
+                last = triple['relation']
+            output += f'{triple["relation"]}({triple["individual"]}, {triple["concept"]}).\n'
+
+        triple_relations = [triple['relation'] for triple in json['triples']]
+        for relation in set(relations) - set(triple_relations):
+            if last != relation:
+                output += f'\n'
+                last = relation
+            output += f'{relation}(_, _) :- false.\n'
+
+        output += '\n'
+        for triple in json['triples']:
+            for key, value in triple['properties'].items():
+                output += f'property({triple["individual"]}, [{value[0]}]).\n'
+
+        output += '\n'
+        output += 'classOf(X, Y) :- iof(X, Y).\n'
+        output += 'classOf(X, Y) :- isa(X, Y).\n'
+
+        output += '\n'
+        output += 'concepts(X, Y) :- concept(X), classOf(Y, X), !.\n'
+        output += "concepts(X, Y) :- write('One of terms '), write(X), write(' or '), write(Y), write(' is not a Concept.'), nl.\n"
+
+        output += '\n'
+        output += 'validIsa(X, Y) :- isa(X, Y), concepts(X, Y), fail.\n'
+        output += "validIsa(_, _) :- write('End of validation.'), nl.\n"
+
+        output += '\n'
+        output += 'individualAndConcept(I, C) :- individual(I), concept(C), !.\n'
+        output += "individualAndConcept(I, C) :- write('One of terms '), write(I), write(' or '), write(C), write(' is not an Individual or a Concept.'), nl.\n"
+
+        output += '\n'
+        output += 'validIof(I, C) :- iof(I, C), individualAndConcept(I, C), fail.\n'
+        output += "validIof(_, _) :- write('End of validation.'), nl.\n"
+
+        return output
+
     def complete_dot_legacy():
         json = parser.result
         validate_json(json)
@@ -760,7 +829,6 @@ def create_parser(out='log'):
     if out == 'json':
         parser.accept = accept_json
         parser.complete = complete_json
-        parser.result = {}
     elif out == 'log':
         parser.accept = accept_log
         parser.complete = complete_log
@@ -777,6 +845,9 @@ def create_parser(out='log'):
             },
             'output': []
         }
+    elif out == 'prolog':
+        parser.accept = accept_json
+        parser.complete = complete_prolog
     else:
         raise Exception(
             f'Unknown output type: {out} ["json", "log", "dot", "dot:legacy"]')
@@ -791,7 +862,8 @@ def parse_args():
     argparser.add_argument('--tokenize', action='store_true',
                            help='Tokenize only')
     argparser.add_argument('-f', '--format', type=str, default='dot',
-                           choices=['dot', 'log', 'json', 'dot:legacy'],
+                           choices=['dot', 'dot:legacy',
+                                    'log', 'json', 'prolog'],
                            help='Output format')
     argparser.add_argument('-o', '--output', type=argparse.FileType('w'),
                            default=sys.stdout,
