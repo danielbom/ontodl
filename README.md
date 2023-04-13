@@ -32,7 +32,6 @@ Use some samples to test:
 ```bash
 # default format is dot
 python3 ontodl.py samples/ontodl_sample1.ontodl --format dot
-python3 ontodl.py samples/ontodl_sample2.ontodl --format dot:legacy
 python3 ontodl.py samples/ontodl_sample2.ontodl --format prolog
 python3 ontodl.py samples/ontodl_sample2.ontodl --format owl # Web Ontology Language
 python3 ontodl.py samples/ontodl_sample1.ontodl --format json

@@ -7,9 +7,9 @@ concepts {
 
 individuos { a, b }
 
-relacoes { x, y }
+relacoes { x }
 
 triples {
-  a = iof => c;
-  b = y => d[f=true];
+  a = x => c;
+  b = iof => d[f=true];
 }.

@@ -1,0 +1,34 @@
+Ontologia MeiosTransporte
+
+conceitos {
+  automovel, autocarro, carrinha, mota, avioa, barco,
+  meioTransporte, meioTranspTerra, meioTranspAqua, meioTranspAereo,
+  veiculo [matric: string, marca: string],
+  veiculoPassag, veiculoMerca, veiculoPesado, veiculoLigei, dono,
+  Pessoa [nome: string, licencaC: string],
+  profissao [nome: string]
+}
+
+individuos {
+  a, b, c
+}
+
+relations {
+  tem, exerce
+}
+
+triplos {
+  veiculo = isa => meioTranspTerra;
+  veiculoPassag = isa => veiculo;
+  veiculoLigei = isa => veiculo;
+  veiculoMerca = isa => veiculo;
+  veiculoPesado = isa => veiculo;
+  automovel = isa => veiculoPassag;
+  automovel = isa => veiculoLigei;
+  carrinha = isa => veiculoMerca;
+  carrinha = isa => veiculoLigei;
+  autocarro = isa => veiculoPassag;
+  autocarro = isa => veiculoPesado;
+  veiculo = tem => dono;
+  dono = exerce => profissao;
+}.

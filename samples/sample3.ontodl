@@ -1,0 +1,66 @@
+Ontologia EventosHistoricos
+
+conceitos {
+  EventosHistorico[descricao:string, data:string],
+ 
+	%Localidades
+  Portugal, NorteDeAfrica,
+  Fatima, Lisboa, Setubal, Aljubarrota, Zamora, Paris,
+  
+	%refere ao caracter do evento, Politico aqui refere a inaugurações de locais,
+  %construcoes, possiveis guerras/acordos de paz etc
+  Religioso, Revolucionario, Lendario, Politico, Outro
+}
+
+individuos {
+	Evento1, Evento2, Evento3, Evento4, Evento5, Evento6, Evento7, Evento8,
+  Evento9, Evento10
+}
+
+relacoes { TemCaracter, AconteceuEm, PertenceA }
+
+triplos {
+	Evento1 = iof => EventosHistorico[descricao="Desaparecimento de D. Sebastiao", data="4-8-1578" ];
+	Evento2 = iof => EventosHistorico[descricao="N.Senhora aparece aos 3 pastorinhos", data="5-13-1917" ];
+	Evento3 = iof => EventosHistorico[descricao="Revolucao dos Cravos", data="25-4-1974" ];
+	Evento4 = iof => EventosHistorico[descricao="Implantação da Republica ", data="5-10-1910" ];
+	Evento5 = iof => EventosHistorico[descricao="Tratado de Tordesilhas", data="7-6-1494" ];
+	Evento6 = iof => EventosHistorico[descricao="Tratado de adesao da UE", data="12-6-1985" ];
+	Evento7 = iof => EventosHistorico[descricao="Brites de Almeida (Padeira de Aljubarrota)", data="14-8-1385" ];
+	Evento8 = iof => EventosHistorico[descricao="Tratado de Zamora", data="5-10-1143" ];
+	Evento9 = iof => EventosHistorico[descricao="Lusiadas", data="1572" ];
+	Evento10= iof => EventosHistorico[descricao="Vitoria do Euro 2016", data="10-7-2016" ];
+	
+	Evento1 = PertenceA => Portugal;
+	Evento2 = PertenceA => Portugal;
+	Evento3 = PertenceA => Portugal;
+	Evento4 = PertenceA => Portugal;
+	Evento5 = PertenceA => Portugal;
+	Evento6 = PertenceA => Portugal;
+	Evento7 = PertenceA => Portugal;
+	Evento8 = PertenceA => Portugal;
+	Evento9 = PertenceA => Portugal;
+	Evento10= PertenceA => Portugal;
+	
+	Evento1 = TemCaracter => Lendario;
+	Evento2 = TemCaracter => Religioso;
+	Evento3 = TemCaracter => Revolucionario;
+	Evento4 = TemCaracter => Revolucionario;
+	Evento5 = TemCaracter => Politico;
+	Evento6 = TemCaracter => Politico;
+	Evento7 = TemCaracter => Lendario;
+	Evento8 = TemCaracter => Politico;
+	Evento9 = TemCaracter => Outro;
+	Evento10= TemCaracter => Outro;
+	
+	Evento1 = AconteceuEm => NorteDeAfrica;
+	Evento2 = AconteceuEm => Fatima;
+	Evento3 = AconteceuEm => Lisboa;
+	Evento4 = AconteceuEm => Lisboa;
+	Evento5 = AconteceuEm => Setubal;
+	Evento6 = AconteceuEm => Lisboa;
+	Evento7 = AconteceuEm => Aljubarrota;
+	Evento8 = AconteceuEm => Zamora;
+	Evento9 = AconteceuEm => Lisboa;
+	Evento10= AconteceuEm => Paris;
+}.

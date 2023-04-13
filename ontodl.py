@@ -33,7 +33,6 @@ Use some samples to test:
 ```bash
 # default format is dot
 python3 ontodl.py samples/ontodl_sample1.ontodl --format dot
-python3 ontodl.py samples/ontodl_sample2.ontodl --format dot:legacy
 python3 ontodl.py samples/ontodl_sample2.ontodl --format prolog
 python3 ontodl.py samples/ontodl_sample2.ontodl --format owl # Web Ontology Language
 python3 ontodl.py samples/ontodl_sample1.ontodl --format json
@@ -116,7 +115,7 @@ id              : ID
 import sys
 
 tokens = ('ONTOLOGY', 'CONCEPTS', 'INDIVIDUALS', 'RELATIONS', 'TRIPLES',
-          'TYPES', 'ID', 'NUMBER', 'BOOLEAN', 'STRING', 'DATE', 'IMPLIES')
+          'TYPES', 'ID', 'NUMBER', 'BOOLEAN', 'STRING', 'DATE', 'IMPLIES', 'COMMENT')
 literals = ('{', '}', '[', ']', ':', ';', ',', '.', '=')
 
 
@@ -181,6 +180,10 @@ def t_STRING(t):
 def t_IMPLIES(t):
     r'=>'
     return t
+
+
+def t_COMMENT(t):
+    r'%.*'
 
 
 def t_error(t):
@@ -404,6 +407,10 @@ def create_parser(out='log'):
         all_relations = builtin_relations + json['relations']
 
         for triple in json['triples']:
+            if triple['relation'] != 'iof':
+                if len(triple['properties']) > 0:
+                    raise Exception(
+                        "Only relation 'iof' must have properties.")
             # Relations 'isa' must have concepts as arguments without properties
             if triple['relation'] == 'isa':
                 relation = f"{triple['individual']} = isa => {triple['concept']}"
@@ -413,9 +420,6 @@ def create_parser(out='log'):
                 if triple['individual'] not in json['concepts']:
                     raise Exception(
                         "Relation 'isa' of must have only concepts.")
-                if len(triple['properties']) > 0:
-                    raise Exception(
-                        f"Relation 'isa' must not have properties. Maybe you want: '{relation}';")
                 continue
             if triple['relation'] == 'iof':
                 if triple['individual'] not in json['individuals']:
@@ -440,8 +444,10 @@ def create_parser(out='log'):
                     if prop not in properties:
                         raise Exception(
                             f"Property '{concept_name}.{prop}' is not defined in triple")
+                continue
             # Individual must be defined
-            if triple['individual'] not in json['individuals']:
+            individual_defined = triple['individual'] in json['individuals'] or triple['individual'] in json['concepts']
+            if not individual_defined:
                 raise Exception(
                     f"Individual '{triple['individual']}' is not defined")
             # Relation must be defined
@@ -565,7 +571,7 @@ def create_parser(out='log'):
         else:
             print(f'Unknown name: {name}')
 
-    def accept_dot(name, p):
+    def accept_dot_single_pass(name, p):
         if name == 'root':
             pass
         elif name == 'end':
@@ -649,7 +655,7 @@ def create_parser(out='log'):
             if concept not in p.parser.result['entries']:
                 raise Exception(f'Concept "{concept}" does not exist.')
 
-            if p.parser.result['entries'][individual]['type'] != 'individual':
+            if p.parser.result['entries'][individual]['type'] not in ['concept', 'individual']:
                 raise Exception(f'Entry "{individual}" is not an individual.')
             if p.parser.result['entries'][relation]['type'] != 'relation':
                 raise Exception(f'Entry "{relation}" is not a relation.')
@@ -657,19 +663,24 @@ def create_parser(out='log'):
                 raise Exception(
                     f'Entry "{concept}" is not a concept or an individual.')
 
+            if relation != 'iof':
+                if len(properties.keys()) > 0:
+                    raise Exception("Only relation 'iof' must have properties.")
+
             entry_concept = p.parser.result['entries'][concept]
             if entry_concept['type'] == 'concept':
-                for key, value in properties.items():
-                    if key not in entry_concept['attributes']:
-                        raise Exception(
-                            f'Concept "{concept}" does not have attribute "{key}".')
-                    if entry_concept['attributes'][key] != value[1]:
-                        raise Exception(
-                            f'Attribute "{key}" of concept "{concept}" is of type "{entry_concept["attributes"][key]}", not "{value[1]}".')
-                for key, value in entry_concept['attributes'].items():
-                    if key not in properties:
-                        raise Exception(
-                            f'Attribute "{key}" of concept "{concept}" is not set.')
+                if relation == 'iof':
+                    for key, value in properties.items():
+                        if key not in entry_concept['attributes']:
+                            raise Exception(
+                                f'Concept "{concept}" does not have attribute "{key}".')
+                        if entry_concept['attributes'][key] != value[1]:
+                            raise Exception(
+                                f'Attribute "{key}" of concept "{concept}" is of type "{entry_concept["attributes"][key]}", not "{value[1]}".')
+                    for key, value in entry_concept['attributes'].items():
+                        if key not in properties:
+                            raise Exception(
+                                f'Attribute "{key}" of concept "{concept}" is not set.')
 
             p.parser.result['output'].append(
                 f'  "{individual}" -> "{concept}" [label="{relation}", style=solid, color=black];')
@@ -712,7 +723,7 @@ def create_parser(out='log'):
         else:
             print(f'Unknown name: {name}')
 
-    def complete_dot():
+    def complete_dot_single_pass():
         return '\n'.join(parser.result['output'])
 
     def complete_json():
@@ -840,7 +851,7 @@ def create_parser(out='log'):
 
         return output
 
-    def complete_dot_legacy():
+    def complete_dot():
         json = parser.result
         validate_json(json)
 
@@ -900,12 +911,12 @@ def create_parser(out='log'):
     elif out == 'log':
         parser.accept = accept_log
         parser.complete = complete_log
-    elif out == 'dot:legacy':
-        parser.accept = accept_json
-        parser.complete = complete_dot_legacy
     elif out == 'dot':
-        parser.accept = accept_dot
+        parser.accept = accept_json
         parser.complete = complete_dot
+    elif out == 'dot:experimental':
+        parser.accept = accept_dot_single_pass
+        parser.complete = complete_dot_single_pass
         parser.result = {
             'entries': {
                 'iof': {'type': 'relation'},
@@ -921,7 +932,7 @@ def create_parser(out='log'):
         parser.complete = complete_owl
     else:
         raise Exception(
-            f'Unknown output type: {out} ["json", "log", "dot", "dot:legacy"]')
+            f'Unknown output type: {out} ["dot", "dot:experimental", "prolog", "owl", "json", "log"]')
 
     return parser
 
@@ -933,7 +944,7 @@ def parse_args():
     argparser.add_argument('--tokenize', action='store_true',
                            help='Tokenize only')
     argparser.add_argument('-f', '--format', type=str, default='dot',
-                           choices=['dot', 'dot:legacy',
+                           choices=['dot', 'dot:experimental',
                                     'prolog', 'owl', 'json', 'log'],
                            help='Output format')
     argparser.add_argument('-o', '--output', type=argparse.FileType('w'),
@@ -945,9 +956,13 @@ def parse_args():
 def execute(file, tokenize=False, format='dot', output=sys.stdout):
     if tokenize:
         lexer = create_lexer()
-        for tok in lexer.tokenize(file.read()):
-            print(tok)
-        exit(0)
+        lexer.input(file.read())
+        try:
+            while tok := lexer.next():
+                output.write(str(tok) + '\n')
+        except StopIteration:
+            pass
+        return
 
     lexer = create_lexer()
     parser = create_parser(format)

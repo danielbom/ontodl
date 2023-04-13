@@ -29,10 +29,10 @@ def make_parser(out):
     ['''Ontologia T conceitos { a[f:string] } individuos { b } relacoes { } triplos { b = isa => a; }.''',
         "Relation 'isa' of must have only concepts."],
     ['''Ontologia T conceitos { a[f:string], b } individuos { } relacoes { } triplos { b = isa => a[name="X"]; }.''',
-        "Relation 'isa' must not have properties. Maybe you want: 'b = isa => a';"],
+        "Only relation 'iof' must have properties."],
 ])
 def test_ontology_must_be_validated_for_dot_legacy(text, error):
-    parser = make_parser('dot:legacy')
+    parser = make_parser('dot')
     try:
         parser.parse(text)
         parser.complete()
@@ -60,7 +60,7 @@ def test_ontology_must_be_validated_for_dot_legacy(text, error):
         'Entry with name "a" already exists as individual.'],
 ])
 def test_ontology_must_be_validated_for_dot(text, error):
-    parser = make_parser('dot')
+    parser = make_parser('dot:experimental')
     try:
         parser.parse(text)
         parser.complete()
