@@ -28,7 +28,7 @@ def make_parser(out):
         "Individual, relation and concept have overlapping keys"],
 ])
 def test_ontology_must_be_validated_for_json_dot(text, error):
-    parser = make_parser('json_dot')
+    parser = make_parser('dot:legacy')
     try:
         parser.parse(text)
         parser.complete()

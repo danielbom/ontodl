@@ -32,9 +32,9 @@ Use some samples to test:
 ```bash
 # default format is dot
 python3 ontodl.py samples/ontodl_sample1.ontodl --format dot 
+python3 ontodl.py samples/ontodl_sample2.ontodl --format dot:legacy
 python3 ontodl.py samples/ontodl_sample2.ontodl --format log
 python3 ontodl.py samples/ontodl_sample1.ontodl --format json
-python3 ontodl.py samples/ontodl_sample2.ontodl --format json_dot
 ```
 
 Looks for the tokenization of the input:

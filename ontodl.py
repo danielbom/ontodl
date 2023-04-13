@@ -33,9 +33,9 @@ Use some samples to test:
 ```bash
 # default format is dot
 python3 ontodl.py samples/ontodl_sample1.ontodl --format dot 
+python3 ontodl.py samples/ontodl_sample2.ontodl --format dot:legacy
 python3 ontodl.py samples/ontodl_sample2.ontodl --format log
 python3 ontodl.py samples/ontodl_sample1.ontodl --format json
-python3 ontodl.py samples/ontodl_sample2.ontodl --format json_dot
 ```
 
 Looks for the tokenization of the input:
@@ -703,7 +703,7 @@ def create_parser(out='log'):
         import json
         return json.dumps(parser.result, indent=2)
 
-    def complete_json_dot():
+    def complete_dot_legacy():
         json = parser.result
         validate_json(json)
 
@@ -764,9 +764,9 @@ def create_parser(out='log'):
     elif out == 'log':
         parser.accept = accept_log
         parser.complete = complete_log
-    elif out == 'json_dot':
+    elif out == 'dot:legacy':
         parser.accept = accept_json
-        parser.complete = complete_json_dot
+        parser.complete = complete_dot_legacy
     elif out == 'dot':
         parser.accept = accept_dot
         parser.complete = complete_dot
@@ -778,7 +778,8 @@ def create_parser(out='log'):
             'output': []
         }
     else:
-        raise Exception(f'Unknown output type: {out} ["json", "log"]')
+        raise Exception(
+            f'Unknown output type: {out} ["json", "log", "dot", "dot:legacy"]')
 
     return parser
 
@@ -790,7 +791,7 @@ def parse_args():
     argparser.add_argument('--tokenize', action='store_true',
                            help='Tokenize only')
     argparser.add_argument('-f', '--format', type=str, default='dot',
-                           choices=['dot', 'log', 'json', 'json_dot'],
+                           choices=['dot', 'log', 'json', 'dot:legacy'],
                            help='Output format')
     argparser.add_argument('-o', '--output', type=argparse.FileType('w'),
                            default=sys.stdout,
