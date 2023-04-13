@@ -15,9 +15,9 @@ def make_parser(out):
     ['''Ontologia T conceitos {} individuos {} relacoes { iof } triplos {}.''',
         "Relation 'iof' is a builtin relation"],
     ['''Ontologia T conceitos {} individuos {} relacoes {} triplos { a = iof => A; }.''',
-        "Individual 'a' is not defined"],
+        "Relation 'iof' must have an individual as the 1st argument."],
     ['''Ontologia T conceitos {} individuos { a } relacoes {} triplos { a = iof => A; }.''',
-        "Concept 'A' is not defined"],
+        "Relation 'iof' must have a concepts as the 2nd argument."],
     ['''Ontologia T conceitos { A[name:string] } individuos { a } relacoes {} triplos { a = iof => A; }.''',
         "Property 'A.name' is not defined in triple"],
     ['''Ontologia T conceitos { A[name:string] } individuos { a } relacoes {} triplos { a = iof => A[name=10]; }.''',
@@ -26,13 +26,16 @@ def make_parser(out):
         "Property 'A.name' is not defined in concept"],
     ['''Ontologia T conceitos {} individuos { a } relacoes { a } triplos {}.''',
         "Individual, relation and concept have overlapping keys"],
+    ['''Ontologia T conceitos { a[f:string] } individuos { b } relacoes { } triplos { b = isa => a; }.''',
+        "Relation 'isa' of must have only concepts."],
+    ['''Ontologia T conceitos { a[f:string], b } individuos { } relacoes { } triplos { b = isa => a[name="X"]; }.''',
+        "Relation 'isa' must not have properties. Maybe you want: 'b = isa => a';"],
 ])
-def test_ontology_must_be_validated_for_json_dot(text, error):
+def test_ontology_must_be_validated_for_dot_legacy(text, error):
     parser = make_parser('dot:legacy')
     try:
         parser.parse(text)
         parser.complete()
-        print(parser.result)
         assert False
     except Exception as e:
         assert str(e) == error
@@ -61,7 +64,6 @@ def test_ontology_must_be_validated_for_dot(text, error):
     try:
         parser.parse(text)
         parser.complete()
-        print(parser.result)
         assert False
     except Exception as e:
         assert str(e) == error

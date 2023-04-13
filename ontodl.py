@@ -3,7 +3,7 @@
 
 This is the specification for the ONTODL language. ONTODL is a language for describing ontologies.
 
-You can try an online version of ONTODL to DOT [here](https://webontodl.epl.di.uminho.pt/). 
+You can try an online version of ONTODL to DOT [here](https://webontodl.epl.di.uminho.pt/).
 
 You can find the source code in [Github](https://github.com/danielbom/ontodl).
 
@@ -13,7 +13,7 @@ To use this script, you need have ply installed.
 
 ```
 # create a virtual environment (optional)
-python -m venv venv 
+python -m venv venv
 source venv/bin/activate    # linux
 ./venv/Scripts/activate.ps1 # windows powershell
 
@@ -32,11 +32,12 @@ Use some samples to test:
 
 ```bash
 # default format is dot
-python3 ontodl.py samples/ontodl_sample1.ontodl --format dot 
+python3 ontodl.py samples/ontodl_sample1.ontodl --format dot
 python3 ontodl.py samples/ontodl_sample2.ontodl --format dot:legacy
 python3 ontodl.py samples/ontodl_sample2.ontodl --format prolog
-python3 ontodl.py samples/ontodl_sample2.ontodl --format log
+python3 ontodl.py samples/ontodl_sample2.ontodl --format owl # Web Ontology Language
 python3 ontodl.py samples/ontodl_sample1.ontodl --format json
+python3 ontodl.py samples/ontodl_sample2.ontodl --format log
 ```
 
 Looks for the tokenization of the input:
@@ -403,22 +404,29 @@ def create_parser(out='log'):
         all_relations = builtin_relations + json['relations']
 
         for triple in json['triples']:
-            # Individual must be defined
-            if triple['individual'] not in json['individuals']:
-                raise Exception(
-                    f"Individual '{triple['individual']}' is not defined")
-            # Relation must be defined
-            if triple['relation'] not in all_relations:
-                raise Exception(
-                    f"Relation '{triple['relation']}' is not defined")
-            # Concept must be defined
-            concept_defined = False
-            if triple['concept'] in json['concepts']:
-                concept_defined = True
+            # Relations 'isa' must have concepts as arguments without properties
+            if triple['relation'] == 'isa':
+                relation = f"{triple['individual']} = isa => {triple['concept']}"
+                if triple['concept'] not in json['concepts']:
+                    raise Exception(
+                        "Relation 'isa' of must have only concepts.")
+                if triple['individual'] not in json['concepts']:
+                    raise Exception(
+                        "Relation 'isa' of must have only concepts.")
+                if len(triple['properties']) > 0:
+                    raise Exception(
+                        f"Relation 'isa' must not have properties. Maybe you want: '{relation}';")
+                continue
+            if triple['relation'] == 'iof':
+                if triple['individual'] not in json['individuals']:
+                    raise Exception(
+                        "Relation 'iof' must have an individual as the 1st argument.")
+                if triple['concept'] not in json['concepts']:
+                    raise Exception(
+                        "Relation 'iof' must have a concepts as the 2nd argument.")
                 concept_name = triple['concept']
                 concept = json['concepts'][concept_name]
                 properties = triple['properties']
-                # Properties must be defined in concept
                 for prop, typ in properties.items():
                     typ = typ[1]
                     if prop not in concept:
@@ -432,9 +440,16 @@ def create_parser(out='log'):
                     if prop not in properties:
                         raise Exception(
                             f"Property '{concept_name}.{prop}' is not defined in triple")
-
-            if triple['concept'] in json['individuals']:
-                concept_defined = True
+            # Individual must be defined
+            if triple['individual'] not in json['individuals']:
+                raise Exception(
+                    f"Individual '{triple['individual']}' is not defined")
+            # Relation must be defined
+            if triple['relation'] not in all_relations:
+                raise Exception(
+                    f"Relation '{triple['relation']}' is not defined")
+            # Concept must be defined
+            concept_defined = triple['concept'] in json['concepts'] or triple['concept'] in json['individuals']
             if not concept_defined:
                 raise Exception(
                     f"Concept '{triple['concept']}' is not defined")
@@ -704,6 +719,59 @@ def create_parser(out='log'):
         import json
         return json.dumps(parser.result, indent=2)
 
+    def complete_owl():
+        json = parser.result
+        validate_json(json)
+
+        output = ''
+        output += '<?xml version="1.0" encoding="UTF-8"?>\n'
+        output += '\n'
+        output += '<Ontology\n'
+        output += '  xmlns="http://www.w3.org/2002/07/owl#"\n'
+        output += '  xml:base="http://www.semanticweb.org/gepl/ontologies/2020/10/w_16813858554167876_"\n'
+        output += '  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"\n'
+        output += '  xmlns:xml="http://www.w3.org/XML/1998/namespace"\n'
+        output += '  xmlns:xsd="http://www.w3.org/2001/XMLSchema#"\n'
+        output += '  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"\n'
+        output += '  ontologyIRI="http://www.semanticweb.org/gepl/ontologies/2020/10/w_16813858554167876_"\n'
+        output += '>\n'
+        output += '  <Prefix name="" IRI="http://www.semanticweb.org/gepl/ontologies/2020/10/w_16813858554167876_"/>\n'
+        output += '  <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>\n'
+        output += '  <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>\n'
+        output += '  <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>\n'
+        output += '  <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>\n'
+        output += '  <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>\n'
+        output += '\n'
+        for individual in json['individuals']:
+            output += f'  <Declaration><NamedIndividual IRI="#{individual}"/></Declaration>\n'
+        output += '\n'
+        for concept in json['concepts']:
+            output += f'  <Declaration><Class IRI="#{concept}"/></Declaration>\n'
+        output += '\n'
+        relations = json['relations'] + ['iof', 'isa']
+        for relation in relations:
+            output += f'  <Declaration><ObjectProperty IRI="#{relation}"/></Declaration>\n'
+        output += '\n'
+        for triple in json['triples']:
+            if triple['relation'] == 'iof':
+                output += f'  <ClassAssertion>\n'
+                output += f'    <Class IRI="#{triple["concept"]}"/>\n'
+                output += f'    <NamedIndividual IRI="#{triple["individual"]}"/>\n'
+                output += f'  </ClassAssertion>\n'
+            elif triple['relation'] == 'isa':
+                output += f'  <SubClassOf>\n'
+                output += f'    <Class IRI="#{triple["individual"]}"/>\n'
+                output += f'    <Class IRI="#{triple["concept"]}"/>\n'
+                output += f'  </SubClassOf>\n'
+            else:
+                output += f'  <ObjectPropertyAssertion>\n'
+                output += f'    <ObjectProperty IRI="#{triple["relation"]}"/>\n'
+                output += f'    <NamedIndividual IRI="#{triple["individual"]}"/>\n'
+                output += f'    <NamedIndividual IRI="#{triple["concept"]}"/>\n'
+                output += f'  </ObjectPropertyAssertion>\n'
+        output += '</Ontology>\n'
+        return output
+
     def complete_prolog():
         json = parser.result
         validate_json(json)
@@ -848,6 +916,9 @@ def create_parser(out='log'):
     elif out == 'prolog':
         parser.accept = accept_json
         parser.complete = complete_prolog
+    elif out == 'owl':
+        parser.accept = accept_json
+        parser.complete = complete_owl
     else:
         raise Exception(
             f'Unknown output type: {out} ["json", "log", "dot", "dot:legacy"]')
@@ -863,7 +934,7 @@ def parse_args():
                            help='Tokenize only')
     argparser.add_argument('-f', '--format', type=str, default='dot',
                            choices=['dot', 'dot:legacy',
-                                    'log', 'json', 'prolog'],
+                                    'prolog', 'owl', 'json', 'log'],
                            help='Output format')
     argparser.add_argument('-o', '--output', type=argparse.FileType('w'),
                            default=sys.stdout,

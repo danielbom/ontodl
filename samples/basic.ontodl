@@ -10,6 +10,6 @@ individuos { a, b }
 relacoes { x, y }
 
 triples {
-  a = isa => c;
+  a = iof => c;
   b = y => d[f=true];
 }.
