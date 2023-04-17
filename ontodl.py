@@ -665,7 +665,8 @@ def create_parser(out='log'):
 
             if relation != 'iof':
                 if len(properties.keys()) > 0:
-                    raise Exception("Only relation 'iof' must have properties.")
+                    raise Exception(
+                        "Only relation 'iof' must have properties.")
 
             entry_concept = p.parser.result['entries'][concept]
             if entry_concept['type'] == 'concept':
@@ -859,45 +860,38 @@ def create_parser(out='log'):
         dot = f'digraph {json["ontology"]} {{'
 
         dot += '\n  // individuals\n'
-        dot += '  node [shape=rectangle, style=filled, color=goldenrod];\n'
         for key in sorted(json['individuals']):
-            dot += f'  "{key}";\n'
+            dot += f'  "{key}" [shape=rectangle, style=filled, color=goldenrod];\n'
 
         dot += '\n  // concepts\n'
-        dot += '  node [shape=ellipse, style=filled, color=turquoise4];\n'
         for key in sorted(json['concepts']):
             if key not in nodes:
                 nodes.add(key)
-                dot += f'  "{key}";\n'
+                dot += f'  "{key}" [shape=ellipse, style=filled, color=turquoise4];\n'
 
         dot += '\n  // concepts properties\n'
-        dot += '  node [shape=rectangle, style=solid, color=turquoise4];\n'
         for key in json['concepts']:
             for prop in json['concepts'][key]:
                 if prop not in nodes:
                     nodes.add(prop)
-                    dot += f'  "{prop}";\n'
+                    dot += f'  "{prop}" [shape=rectangle, style=solid, color=turquoise4];\n'
 
         dot += '\n  // concepts properties relations\n'
-        dot += '  edge [label="Properties", style=dotted, color=red];\n'
         for key in json['concepts']:
             for prop in json['concepts'][key]:
-                dot += f'  "{key}" -> "{prop}";\n'
+                dot += f'  "{key}" -> "{prop}" [label="Properties", style=dotted, color=red];\n'
 
         dot += '\n  // triples\n'
-        dot += '  edge [style=solid, color=black];\n'
         for it in json['triples']:
-            dot += f'  "{it["individual"]}" -> "{it["concept"]}" [label="{it["relation"]}"];\n'
+            dot += f'  "{it["individual"]}" -> "{it["concept"]}" [label="{it["relation"]}", style=solid, color=black];\n'
 
         dot += '\n  // triples attributes & relations\n'
-        dot += '  node [shape=rectangle,color=goldenrod];\n'
-        dot += '  edge [label="properties", style=dotted, color=red];\n'
         for it in json['triples']:
             for attr in it['properties']:
                 value = it['properties'][attr][0].replace('"', "'")
                 node = f'"{attr}={value}"'
-                dot += f'  {node};\n'
-                dot += f'  "{it["individual"]}" -> {node};\n'
+                dot += f'  {node} [shape=rectangle,color=goldenrod];\n'
+                dot += f'  "{it["individual"]}" -> {node} [label="properties", style=dotted, color=red];\n'
 
         dot += '}\n'
         return dot
