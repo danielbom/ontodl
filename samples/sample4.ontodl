@@ -1,0 +1,49 @@
+Ontologia ParadigmasDeProgramacao
+
+
+conceitos { LinguagemDeProgramacao, LinguagemAntiga, LinguagemModerna, LinguagemNova, Declarative, Procedural, Functional, ObjectOriented, AspectOriented, Array }
+
+
+individuos { APL, SQL, Cpp, Python, Java, Javascript,  CSharp, Go, Elixir, Rust }
+
+
+relacoes { pertence }
+
+
+triplos {
+    LinguagemAntiga  = isa => LinguagemDeProgramacao;
+    LinguagemModerna = isa => LinguagemDeProgramacao;
+    LinguagemNova    = isa => LinguagemDeProgramacao;
+    
+    APL        = iof => LinguagemAntiga;
+    SQL        = iof => LinguagemAntiga;
+    Cpp        = iof => LinguagemAntiga;
+    Python     = iof => LinguagemAntiga;
+    Java       = iof => LinguagemModerna;
+    Javascript = iof => LinguagemModerna;
+    CSharp     = iof => LinguagemModerna;
+    Go         = iof => LinguagemNova;
+    Elixir     = iof => LinguagemNova;
+    Rust       = iof => LinguagemNova;
+
+
+    Java       = pertence => ObjectOriented;
+    Java       = pertence => AspectOriented;
+    Python     = pertence => Procedural;
+    Python     = pertence => ObjectOriented;
+    Javascript = pertence => Procedural;
+    Javascript = pertence => ObjectOriented;
+    Javascript = pertence => Functional;
+    Cpp        = pertence => Procedural;
+    Cpp        = pertence => ObjectOriented;
+    CSharp     = pertence => ObjectOriented;
+    CSharp     = pertence => Declarative;
+    Go         = pertence => Procedural;
+    Go         = pertence => ObjectOriented;
+    Elixir     = pertence => Functional;
+    Rust       = pertence => Procedural;
+    Rust       = pertence => ObjectOriented;
+    Rust       = pertence => AspectOriented;
+    SQL        = pertence => Declarative;
+    APL        = pertence => Array;
+}.
