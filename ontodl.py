@@ -78,22 +78,18 @@ end             : "."
 ontology        : ONTOLOGY id
 
 concepts        : CONCEPTS "{" concept_list "}"
-concept_list    : concept ("," concept)*
-                | 
+concept_list    : _sep_by{",", concept}
 concept         : id "[" attribute_list "]"
                 | id
-attribute_list  : attribute ("," attribute)*
-                | 
+attribute_list  : _sep_by{",", attribute}
 attribute       : id ":" type
 
 individuals     : INDIVIDUALS "{" individual_list "}"
-individual_list : individual ("," individual)*
-                | 
+individual_list : _sep_by{",", individual}
 individual      : id
 
 relations       : RELATIONS "{" relation_list "}"
-relation_list   : relation ("," relation)*
-                | 
+relation_list   : _sep_by{",", relation}
 relation        : id
 
 triples         : TRIPLES "{" triple_list "}"
@@ -102,8 +98,7 @@ triple_list     : triple (triple)*
 triple          : id "=" id "=>" entity ";"
 entity          : id "[" properties_list "]"
                 | id
-properties_list : property ("," property)*
-                | 
+properties_list : _sep_by{",", property}
 property        : id "=" value
 
 value           : number
@@ -117,6 +112,9 @@ date            : DATE
 type            : TYPES
 id              : ID
                 | STRING
+
+_sep_by{sep, item} : item (sep item)* 
+                   | 
 
 %import common.WS
 %ignore WS | COMMENT
