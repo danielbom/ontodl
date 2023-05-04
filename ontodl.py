@@ -78,37 +78,31 @@ end             : "."
 ontology        : ONTOLOGY id
 
 concepts        : CONCEPTS "{" concept_list "}"
-concept_list    : concept_list "," concept
-                | concept
+concept_list    : concept ("," concept)*
                 | 
 concept         : id "[" attribute_list "]"
                 | id
-attribute_list  : attribute_list "," attribute
-                | attribute
+attribute_list  : attribute ("," attribute)*
                 | 
 attribute       : id ":" type
 
 individuals     : INDIVIDUALS "{" individual_list "}"
-individual_list : individual_list "," individual
-                | individual
+individual_list : individual ("," individual)*
                 | 
 individual      : id
 
 relations       : RELATIONS "{" relation_list "}"
-relation_list   : relation_list "," relation
-                | relation
+relation_list   : relation ("," relation)*
                 | 
 relation        : id
 
 triples         : TRIPLES "{" triple_list "}"
-triple_list     : triple_list triple
-                | triple
+triple_list     : triple (triple)*
                 | 
 triple          : id "=" id "=>" entity ";"
 entity          : id "[" properties_list "]"
                 | id
-properties_list : properties_list "," property
-                | property
+properties_list : property ("," property)*
                 | 
 property        : id "=" value
 
@@ -148,11 +142,7 @@ class JsonTransformer(Transformer):
         return dict(items[1])
 
     def concept_list(self, items):
-        if len(items) == 0:
-            return []
-        if len(items) == 1:
-            return [items[0]]
-        return items[0] + [items[1]]
+        return items
 
     def concept(self, items):
         if len(items) == 1:
@@ -160,11 +150,7 @@ class JsonTransformer(Transformer):
         return [items[0], dict(items[1])]
 
     def attribute_list(self, items):
-        if len(items) == 0:
-            return []
-        if len(items) == 1:
-            return [items[0]]
-        return items[0] + [items[1]]
+        return items
 
     def attribute(self, items):
         return [items[0], items[1]]
@@ -174,11 +160,7 @@ class JsonTransformer(Transformer):
         return items[1]
 
     def individual_list(self, items):
-        if len(items) == 0:
-            return []
-        if len(items) == 1:
-            return [items[0]]
-        return items[0] + [items[1]]
+        return items
 
     def individual(self, items):
         return items[0]
@@ -188,11 +170,7 @@ class JsonTransformer(Transformer):
         return items[1]
 
     def relation_list(self, items):
-        if len(items) == 0:
-            return []
-        if len(items) == 1:
-            return [items[0]]
-        return items[0] + [items[1]]
+        return items
 
     def relation(self, items):
         return items[0]
@@ -202,11 +180,7 @@ class JsonTransformer(Transformer):
         return items[1]
 
     def triple_list(self, items):
-        if len(items) == 0:
-            return []
-        if len(items) == 1:
-            return [items[0]]
-        return items[0] + [items[1]]
+        return items
 
     def triple(self, items):
         return {
@@ -222,11 +196,7 @@ class JsonTransformer(Transformer):
         return {"concept": items[0], "properties": dict(items[1])}
 
     def properties_list(self, items):
-        if len(items) == 0:
-            return []
-        if len(items) == 1:
-            return [items[0]]
-        return items[0] + [items[1]]
+        return items
 
     def property(self, items):
         return [items[0], items[1]]
