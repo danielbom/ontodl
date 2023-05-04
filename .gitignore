@@ -1,5 +1,3 @@
 # gitignore python
 __pycache__/
-parser.out
-parsetab.py
 .pytest_cache/
